@@ -1,0 +1,30 @@
+name: Playwright Test
+
+on: [push, workflow_dispatch]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+    
+    - name: Cache Maven
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: maven-${{ hashFiles('pom.xml') }}
+    
+    - name: Install dependencies
+      run: mvn dependency:resolve
+    
+    - name: Run tests
+      run: mvn clean test -B
+      env:
+        CI: true
