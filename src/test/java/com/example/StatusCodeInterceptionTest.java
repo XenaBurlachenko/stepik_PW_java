@@ -1,41 +1,41 @@
 package com.example;
 
-import com.microsoft.playwright.*;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-
-import static org.junit.jupiter.api.Assertions.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.Route;
 
 public class StatusCodeInterceptionTest {
     Playwright playwright;
     Browser browser;
-    BrowserContext context;
     Page page;
 
     @BeforeEach
     void setUp() {
         playwright = Playwright.create();
         
-        BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions();
-        launchOptions.setHeadless(true);
-        
-        // Критические настройки для CI
-        launchOptions.setArgs(java.util.Arrays.asList(
+        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions();
+        options.setHeadless(true);
+        options.setArgs(java.util.Arrays.asList(
             "--no-sandbox",
             "--disable-dev-shm-usage",
             "--disable-gpu"
         ));
         
-        browser = playwright.chromium().launch(launchOptions);
-        context = browser.newContext();
+        browser = playwright.chromium().launch(options);
+        BrowserContext context = browser.newContext();
         page = context.newPage();
         
-        // Увеличиваем таймауты для CI
-        page.setDefaultTimeout(60000);
+        page.setDefaultTimeout(30000);
         page.setDefaultNavigationTimeout(60000);
 
-        // Перехват запроса
         context.route("**/status_codes/404", route -> {
             route.fulfill(new Route.FulfillOptions()
                 .setStatus(200)
@@ -46,28 +46,22 @@ public class StatusCodeInterceptionTest {
 
     @Test
     void testMockedStatusCode() {
-        // Открываем страницу
         page.navigate("https://the-internet.herokuapp.com/status_codes");
         
-        // Ждем загрузки
-        page.waitForLoadState(Page.LoadState.NETWORKIDLE);
+        page.waitForSelector("a[href='status_codes/404']");
         
-        // Кликаем по ссылке 404
-        page.locator("a[href='status_codes/404']").click();
+        page.click("a[href='status_codes/404']");
         
-        // Ждем ответа
-        page.waitForResponse("**/status_codes/404");
-        
-        // Проверяем текст на странице
+        page.waitForLoadState();
+
         String content = page.content();
         assertTrue(content.contains("Mocked Success Response"), 
-            "Должен отображаться мок-текст. Фактический контент: " + content);
+            "Должен содержать 'Mocked Success Response'. Получено: " + content);
     }
 
     @AfterEach
     void tearDown() {
         if (page != null) page.close();
-        if (context != null) context.close();
         if (browser != null) browser.close();
         if (playwright != null) playwright.close();
     }
