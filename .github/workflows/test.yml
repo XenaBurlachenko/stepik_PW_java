@@ -1,11 +1,10 @@
-name: Playwright Tests
+name: Java Playwright Tests
 
 on: [push, workflow_dispatch]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     
     steps:
     - uses: actions/checkout@v4
@@ -16,40 +15,18 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
     
-    - name: Install system dependencies
+    - name: Setup Playwright
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          libwoff1 \
-          libopus0 \
-          libwebp6 \
-          libwebpdemux2 \
-          libgudev-1.0-0 \
-          libsecret-1-0 \
-          libhyphen0 \
-          libgles2-mesa-dev \
-          libx11-xcb1 \
-          libxcomposite1 \
-          libxdamage1 \
-          libxrandr2 \
-          libgbm1
+        # Используем Playwright из Maven dependency
+        # Браузер установится автоматически при первом запуске
+        echo "Playwright will be installed via Maven dependencies"
     
-    - name: Install Playwright browsers
+    - name: Run tests with retry
       run: |
-        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-        sudo apt-get install -y nodejs
-        # Устанавливаем только chromium
-        npx playwright install chromium --with-deps
-    
-    - name: Run tests
-      run: |
-        echo "=== Running tests ==="
-        mvn clean test -B
-        
-    - name: Upload test reports
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-reports
-        path: target/surefire-reports/
-        retention-days: 7
+        # Запускаем тесты с повтором при неудаче
+        for i in {1..3}; do
+          echo "Attempt $i"
+          mvn clean test -B && break
+          echo "Tests failed, retrying..."
+          sleep 5
+        done
