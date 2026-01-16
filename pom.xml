@@ -45,6 +45,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
+                <configuration>
+                    <systemProperties>
+                        <property>
+                            <name>junit.jupiter.execution.parallel.enabled</name>
+                            <value>false</value>
+                        </property>
+                    </systemProperties>
+                    <argLine>-Djava.awt.headless=true</argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -5,6 +5,7 @@ on: [push, workflow_dispatch]
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     
     steps:
     - uses: actions/checkout@v4
@@ -15,19 +16,40 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
     
-    - name: Cache Maven
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2
-        key: maven-${{ hashFiles('pom.xml') }}
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libwoff1 \
+          libopus0 \
+          libwebp6 \
+          libwebpdemux2 \
+          libgudev-1.0-0 \
+          libsecret-1-0 \
+          libhyphen0 \
+          libgles2-mesa-dev \
+          libx11-xcb1 \
+          libxcomposite1 \
+          libxdamage1 \
+          libxrandr2 \
+          libgbm1
     
-    - name: Install Playwright
+    - name: Install Playwright browsers
       run: |
         curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
         sudo apt-get install -y nodejs
-        npx playwright install chromium
+        # Устанавливаем только chromium
+        npx playwright install chromium --with-deps
     
-    - name: Run all tests
-      run: mvn clean test -B
-      env:
-        CI: true
+    - name: Run tests
+      run: |
+        echo "=== Running tests ==="
+        mvn clean test -B
+        
+    - name: Upload test reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports
+        path: target/surefire-reports/
+        retention-days: 7
