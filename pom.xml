@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.example</groupId>
-    <artifactId>stepik-pw-java</artifactId>
+    <artifactId>playwright-tests</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>

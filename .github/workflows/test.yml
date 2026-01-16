@@ -1,4 +1,4 @@
-name: Playwright Test
+name: Playwright Tests
 
 on: [push, workflow_dispatch]
 
@@ -21,21 +21,13 @@ jobs:
         path: ~/.m2
         key: maven-${{ hashFiles('pom.xml') }}
     
-    - name: Install Playwright and browsers
+    - name: Install Playwright
       run: |
-        # Устанавливаем Node.js
         curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
         sudo apt-get install -y nodejs
-        
-        # Устанавливаем Playwright через npm
-        npm init -y
-        npm install @playwright/test
-        
-        # Устанавливаем браузер
         npx playwright install chromium
-        
-        # Проверяем установку
-        npx playwright --version
     
-    - name: Run tests
+    - name: Run all tests
       run: mvn clean test -B
+      env:
+        CI: true
